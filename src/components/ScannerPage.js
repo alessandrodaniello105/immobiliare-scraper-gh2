@@ -13,41 +13,23 @@ function ScannerPage() {
   const [minPrice, setMinPrice] = useState('');
 
   const handlePriceChange = (e) => {
-    const value = e.target.value;
-    console.log('Price input changed:', value);
-    setMinPrice(value);
+    setMinPrice(e.target.value);
   };
 
   const parsePrice = (priceStr) => {
-    if (!priceStr) {
-      console.log('Empty price string received');
-      return 0;
-    }
-    
-    // Remove currency symbol and any other non-numeric characters except dots
+    if (!priceStr) return 0;
     const cleanPrice = priceStr.replace(/[^\d.]/g, '');
-    console.log(`Cleaned price string: "${cleanPrice}"`);
-    
-    // Handle cases where the price might be in format "1.300.000"
     const parts = cleanPrice.split('.');
     let finalPrice = '';
     
     if (parts.length > 1) {
-      // If we have multiple parts, it's likely in European format
       finalPrice = parts.join('');
     } else {
       finalPrice = cleanPrice;
     }
     
     const parsedPrice = parseInt(finalPrice, 10);
-    console.log(`Final parsed price: ${parsedPrice}`);
-    
-    if (isNaN(parsedPrice)) {
-      console.log('Warning: Could not parse price to number');
-      return 0;
-    }
-    
-    return parsedPrice;
+    return isNaN(parsedPrice) ? 0 : parsedPrice;
   };
 
   const getPreviousLinks = useCallback(() => {
@@ -95,14 +77,11 @@ function ScannerPage() {
       const newListings = [];
       
       const minPriceValue = minPrice ? parsePrice(minPrice) : 0;
-      console.log(`Minimum price set to: ${minPriceValue}`);
 
       // First, filter by price if minPrice is set
       const priceFilteredListings = minPriceValue > 0
         ? currentListings.filter(listing => parsePrice(listing.price) >= minPriceValue)
         : currentListings;
-
-      console.log(`Found ${priceFilteredListings.length} listings${minPriceValue > 0 ? ` above minimum price` : ''}`);
 
       // Then, filter out previously seen listings
       priceFilteredListings.forEach(listing => {
@@ -110,8 +89,6 @@ function ScannerPage() {
           newListings.push(listing);
         }
       });
-
-      console.log(`Found ${newListings.length} new listings`);
 
       if (previousLinks.size === 0 && priceFilteredListings.length > 0) {
         setStatusMessage(`First scan completed. Found ${priceFilteredListings.length} listing(s)${minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}.`);

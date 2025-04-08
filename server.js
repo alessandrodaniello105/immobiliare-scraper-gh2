@@ -35,23 +35,16 @@ app.use(cors({ origin: 'http://localhost:3000' })); // Adjust if your React app 
 
 // --- Endpoint 1: Scrape Vendor Page for Links ---
 app.get('/api/scrape', async (req, res) => {
-    console.log(`Received request to scrape: ${VENDOR_URL}`);
     try {
         const response = await axios.get(VENDOR_URL, {
              headers: HEADERS,
              timeout: 20000
         });
-        console.log(`Fetch successful (Status: ${response.status})`);
         const htmlContent = response.data;
 
         const $ = cheerio.load(htmlContent);
         const extractedListings = [];
         const baseUrl = new url.URL(VENDOR_URL).origin;
-
-        // Log the HTML structure of the first listing
-        const firstListing = $(`${TARGET_TAG}.${TARGET_CLASS.split(' ').join('.')}`).first();
-        console.log('First listing HTML:', firstListing.html());
-        console.log('Price element HTML:', firstListing.find(PRICE_SELECTOR).html());
 
         $(`${TARGET_TAG}.${TARGET_CLASS.split(' ').join('.')}`).each((i, element) => {
             const linkTag = $(element).find(LINK_TAG_SELECTOR);
@@ -60,11 +53,6 @@ app.get('/api/scrape', async (req, res) => {
             if (linkTag.length > 0) {
                 const href = linkTag.attr('href');
                 const priceText = priceTag.text().trim();
-                
-                console.log(`Listing ${i + 1}:`);
-                console.log('- URL:', href);
-                console.log('- Price text:', priceText);
-                console.log('- Price HTML:', priceTag.html());
                 
                 if (href && href.includes("immobiliare.it/annunci/")) {
                     let absoluteLink = href;
@@ -80,20 +68,16 @@ app.get('/api/scrape', async (req, res) => {
             }
         });
 
-        console.log(`Found ${extractedListings.length} valid listings.`);
         res.json({ listings: extractedListings });
 
     } catch (error) {
         console.error("Error during scraping:", error.message);
         if (error.response) {
-            console.error("Status Code:", error.response.status);
-            console.error("Response Headers:", error.response.headers);
             res.status(error.response.status || 500).json({
                 message: `Failed to fetch or parse the page. Status: ${error.response.status}`,
                 error: error.message
             });
         } else if (error.request) {
-            console.error("No response received:", error.request);
             res.status(504).json({ message: "No response received from target server.", error: error.message });
         } else {
             res.status(500).json({ message: "An internal server error occurred.", error: error.message });
