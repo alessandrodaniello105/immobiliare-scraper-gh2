@@ -1,0 +1,84 @@
+/* scraper-frontend/src/App.css */
+.App {
+  text-align: center;
+}
+
+.App-header {
+  background-color: #f0f0f0; /* Light grey background */
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(10px + 1vmin); /* Smaller base font */
+  color: #282c34; /* Dark text */
+  padding: 20px;
+}
+
+button {
+  padding: 10px 20px;
+  font-size: 1rem;
+  margin: 20px;
+  cursor: pointer;
+  background-color: #007bff; /* Blue */
+  color: white;
+  border: none;
+  border-radius: 5px;
+  transition: background-color 0.2s ease;
+}
+
+button:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+button:hover:not(:disabled) {
+  background-color: #0056b3; /* Darker blue */
+}
+
+.status-message {
+  margin-top: 15px;
+  font-weight: bold;
+  min-height: 1.5em; /* Reserve space */
+}
+
+.error-message {
+  margin-top: 10px;
+  color: #dc3545; /* Red for errors */
+  font-weight: bold;
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  padding: 10px;
+  border-radius: 5px;
+  max-width: 80%;
+}
+
+.results {
+  margin-top: 20px;
+  text-align: left;
+  max-width: 90%;
+  overflow-wrap: break-word; /* Wrap long links */
+  background-color: white;
+  padding: 15px;
+  border-radius: 5px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.results ul {
+  list-style: none;
+  padding: 0;
+}
+
+.results li {
+  margin-bottom: 8px;
+  font-size: 0.9rem;
+}
+
+.results a {
+  color: #0056b3;
+  text-decoration: none;
+}
+
+.results a:hover {
+  text-decoration: underline;
+}
