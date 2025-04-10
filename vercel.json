@@ -1,0 +1,11 @@
+
+{
+    "framework": "create-react-app",
+    "build": {
+      "env": {
+      }
+    },
+    "rewrites": [
+      { "source": "/api/(.*)", "destination": "/api/$1" }
+    ]
+  }
