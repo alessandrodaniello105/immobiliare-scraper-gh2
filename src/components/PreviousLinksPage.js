@@ -1,102 +1,151 @@
 // src/components/PreviousLinksPage.js
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { STORAGE_KEY } from '../App';
-import '../App.css'; // Use shared styles
+// Use the new constant for the listings API endpoint
+import { API_URL_LISTINGS } from '../App';
+import '../App.css';
 
 function PreviousLinksPage() {
-  const [previousListings, setPreviousListings] = useState([]);
-  const [message, setMessage] = useState('Loading previous scan data...');
+  // State holds ALL listings fetched from the DB
+  const [allListings, setAllListings] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [message, setMessage] = useState('Loading stored listings...');
+  // State for client-side filtering of displayed results
   const [minPrice, setMinPrice] = useState('');
 
+  // Price parsing function remains the same
   const parsePrice = (priceStr) => {
     if (!priceStr) return 0;
     const cleanPrice = priceStr.replace(/[^\d.]/g, '');
     const parts = cleanPrice.split('.');
     let finalPrice = '';
-    
     if (parts.length > 1) {
       finalPrice = parts.join('');
     } else {
       finalPrice = cleanPrice;
     }
-    
     const parsedPrice = parseInt(finalPrice, 10);
     return isNaN(parsedPrice) ? 0 : parsedPrice;
   };
 
+  // Fetch all listings from the DB on component mount
   useEffect(() => {
-    const storedListings = localStorage.getItem(STORAGE_KEY);
-    if (storedListings) {
+    const fetchListings = async () => {
+      setIsLoading(true);
       try {
-        const listingsArray = JSON.parse(storedListings);
-        setPreviousListings(listingsArray);
-        if (listingsArray.length === 0) {
-          setMessage('The previous scan found no listings.');
-        } else {
-          setMessage(`Displaying ${listingsArray.length} listings found in the last scan.`);
+        const response = await fetch(API_URL_LISTINGS);
+        const data = await response.json();
+        if (!response.ok) {
+          throw new Error(data.message || `HTTP error! Status: ${response.status}`);
         }
-      } catch (e) {
-        console.error("Failed to parse previous listings", e);
-        setMessage('Could not load previous scan data (invalid format). Please run a new scan.');
-        localStorage.removeItem(STORAGE_KEY);
+        const listings = data.listings || [];
+        setAllListings(listings);
+        if (listings.length === 0) {
+          setMessage('No listings found in the database. Run a scan first.');
+        } else {
+           setMessage('Showing all listings stored in the database.'); // Initial message
+        }
+      } catch (fetchError) {
+        console.error("Failed to fetch listings", fetchError);
+        setMessage(`Error loading listings: ${fetchError.message}`);
+      } finally {
+        setIsLoading(false);
       }
-    } else {
-      setMessage('No previous scan data found. Please run a scan first.');
-    }
+    };
+    fetchListings();
   }, []);
 
   const handlePriceChange = (e) => {
     setMinPrice(e.target.value);
   };
 
-  const handleLinkDeleteAll = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    setPreviousListings([]);
-    setMessage('All previous scan data has been deleted.');
+  // Function to handle deleting all listings
+  const handleDeleteAll = async () => {
+    // Optional: Add confirmation dialog
+    if (!window.confirm("Are you sure you want to delete ALL stored listings? This cannot be undone.")) {
+        return;
+    }
+
+    setIsLoading(true); // Indicate activity
+    setMessage('Deleting all listings...');
+    try {
+      const response = await fetch(API_URL_LISTINGS, { method: 'DELETE' });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || `Failed to delete. Status: ${response.status}`);
+      }
+
+      setAllListings([]); // Clear frontend state
+      setMessage('All stored listings have been deleted.');
+
+    } catch (error) {
+      console.error("Failed to delete listings:", error);
+      setMessage(`Error deleting listings: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const filteredListings = minPrice
-    ? previousListings.filter(listing => parsePrice(listing.price) >= parsePrice(minPrice))
-    : previousListings;
+  // Apply client-side filtering based on the input
+  const minPriceValue = minPrice ? parsePrice(minPrice) : 0;
+  const filteredListings = minPriceValue > 0
+    ? allListings.filter(listing => parsePrice(listing.price) >= minPriceValue)
+    : allListings;
 
   return (
     <div>
-      <h2>Previous Scan Results</h2>
-      
+      <h2>Stored Scan Results</h2>
+
+      {/* Client-side Filter Input */}
       <div className="price-filter">
-        <label htmlFor="minPrice">Filter by Minimum Price (€): </label>
+        <label htmlFor="minPrice">Filter Displayed Results (Min Price €): </label>
         <input
           type="text"
           id="minPrice"
           value={minPrice}
           onChange={handlePriceChange}
           placeholder="e.g., 1.300"
+          disabled={isLoading}
         />
       </div>
 
-      <p>{message}</p>
-      {filteredListings.length > 0 ? (
-        <div className="results">
-          <p>Showing {filteredListings.length} listings{minPrice ? ` above €${parsePrice(minPrice).toLocaleString('it-IT')}` : ''}</p>
-          <ul>
-            {filteredListings.map((listing, index) => (
-              <li key={index}>
-                <Link to={`/details?url=${encodeURIComponent(listing.url)}`}>
-                  {listing.url} - {listing.price}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </div>
+      {isLoading ? (
+        <p>Loading...</p>
       ) : (
-        <p>No listings found{minPrice ? ` above €${parsePrice(minPrice).toLocaleString('it-IT')}` : ''}</p>
+        <> {/* Use fragment to group conditional rendering */}
+          <p>{message}</p>
+          {filteredListings.length > 0 ? (
+            <div className="results">
+              <p>Showing {filteredListings.length} of {allListings.length} stored listings{minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}</p>
+              <ul>
+                {filteredListings.map((listing, index) => (
+                  <li key={index}>
+                    <Link to={`/details?url=${encodeURIComponent(listing.url)}`}>
+                      {listing.url} - {listing.price}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            <p>No stored listings found{minPriceValue > 0 ? ` matching the filter` : ''}.</p>
+          )}
+        </>
       )}
-      
-      <Link to="/" style={{ marginTop: '20px', display: 'inline-block' }}>
+
+      {/* Add Delete All button back */}
+      <button
+        onClick={handleDeleteAll}
+        disabled={isLoading || allListings.length === 0}
+        style={{ backgroundColor: '#dc3545', marginTop: '20px' }} // Red color
+       >
+         Delete All Stored Listings
+       </button>
+
+      <Link to="/" style={{ marginTop: '20px', marginLeft: '20px', display: 'inline-block' }}>
         Go to Scanner
       </Link>
-      <button onClick={handleLinkDeleteAll} className="delete-all-button">Delete All</button>
     </div>
   );
 }

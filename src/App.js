@@ -1,33 +1,30 @@
 // src/App.js
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
 import ScannerPage from './components/ScannerPage';
 import PreviousLinksPage from './components/PreviousLinksPage';
-import PropertyDetailPage from './components/PropertyDetailPage.js';
-import Navbar from './components/Navbar'; // Import Navbar
+import PropertyDetailPage from './components/PropertyDetailPage';
 import './App.css';
 
-// Key for storing previous links in localStorage (can be defined here or imported)
-export const STORAGE_KEY = 'immobiliarePreviousLinks_nicoletta_zaggia';
-// Backend API URL (can be defined here or imported)
-export const API_URL_LIST = 'http://localhost:3001/api/scrape';
-export const API_URL_DETAILS = 'http://localhost:3001/api/scrape-details';
-
+// Define API URLs and other constants
+export const API_BASE_URL = 'http://localhost:3001'; // Backend server address
+export const API_URL_SCRAPE = `${API_BASE_URL}/api/scrape`; // Endpoint for scanning
+export const API_URL_LISTINGS = `${API_BASE_URL}/api/listings`; // Endpoint for getting all stored listings
+export const API_URL_DETAILS = `${API_BASE_URL}/api/details`; // Placeholder endpoint
+// Remove STORAGE_KEY as we are no longer using localStorage directly for listings
 
 function App() {
   return (
     <div className="App">
-      <Navbar /> {/* Add the Navbar */}
-      <header className="App-header"> {/* Keep general header styling if desired */}
+      <Navbar />
+      <main className="App-header">
         <Routes>
           <Route path="/" element={<ScannerPage />} />
           <Route path="/previous" element={<PreviousLinksPage />} />
-          {/* Route for details expects a query param */}
           <Route path="/details" element={<PropertyDetailPage />} />
-          {/* Optional: Add a 404 Not Found Route */}
-           <Route path="*" element={<div><h2>404 Not Found</h2><p>Page does not exist.</p></div>} />
         </Routes>
-      </header>
+      </main>
     </div>
   );
 }

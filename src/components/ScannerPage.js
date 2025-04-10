@@ -1,14 +1,18 @@
 // src/components/ScannerPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Import Link for navigation
-import { STORAGE_KEY, API_URL_LIST } from '../App'; // Import shared constants
+import { API_URL_SCRAPE } from '../App'; // Use the new constants for API endpoints
 // Import shared CSS or create specific ones
 import '../App.css';
 
+// console.log('STORAGE_KEY', STORAGE_KEY);
+// console.log('localStorage', localStorage);
+
 function ScannerPage() {
   const [isLoading, setIsLoading] = useState(false);
-  const [statusMessage, setStatusMessage] = useState('Ready to scan.');
-  const [displayedListings, setDisplayedListings] = useState([]);
+  const [statusMessage, setStatusMessage] = useState('Enter minimum price (optional) and click Scan Now.');
+  // State now holds the NEW listings found in the current scan
+  const [newListingsFound, setNewListingsFound] = useState([]);
   const [error, setError] = useState(null);
   const [minPrice, setMinPrice] = useState('');
 
@@ -32,103 +36,47 @@ function ScannerPage() {
     return isNaN(parsedPrice) ? 0 : parsedPrice;
   };
 
-  const getPreviousLinks = useCallback(() => {
-    const storedListings = localStorage.getItem(STORAGE_KEY);
-    try {
-      if (storedListings) {
-        const listings = JSON.parse(storedListings);
-        // Return a Set of URLs for quick lookup
-        return new Set(listings.map(l => l.url));
-      }
-      return new Set();
-    } catch (e) {
-      console.error("Failed to parse previous listings from localStorage", e);
-      localStorage.removeItem(STORAGE_KEY);
-      return new Set();
-    }
-  }, []);
-
-  const saveCurrentLinks = (listings) => {
-    try {
-      // Store the full listing data instead of just URLs
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(listings));
-    } catch (e) {
-      console.error("Failed to save listings to localStorage", e);
-      setError("Could not save current listings state. Comparison might be incorrect on next scan.");
-    }
-  };
-
   const handleScan = async () => {
     setIsLoading(true);
-    setStatusMessage('Scanning vendor page...');
+    setStatusMessage('Scanning vendor page and comparing with database...');
     setError(null);
-    setDisplayedListings([]);
+    setNewListingsFound([]); // Clear previous new listings
+    const minPriceValue = minPrice ? parsePrice(minPrice) : 0;
 
     try {
-      const response = await fetch(API_URL_LIST);
+      // Call the backend scrape endpoint (POST)
+      const response = await fetch(API_URL_SCRAPE, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ minPrice: minPrice }), // Send raw minPrice string
+      });
+
       const data = await response.json();
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! Status: ${response.status}`);
       }
 
-      const currentListings = data.listings || [];
-      const previousLinks = getPreviousLinks();
-      const newListings = [];
-      
-      const minPriceValue = minPrice ? parsePrice(minPrice) : 0;
+      const newListings = data.newListings || [];
 
-      // First, filter by price if minPrice is set
-      const priceFilteredListings = minPriceValue > 0
-        ? currentListings.filter(listing => parsePrice(listing.price) >= minPriceValue)
-        : currentListings;
-
-      // Then, filter out previously seen listings
-      priceFilteredListings.forEach(listing => {
-        if (!previousLinks.has(listing.url)) {
-          newListings.push(listing);
-        }
-      });
-
-      if (previousLinks.size === 0 && priceFilteredListings.length > 0) {
-        setStatusMessage(`First scan completed. Found ${priceFilteredListings.length} listing(s)${minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}.`);
-        setDisplayedListings(priceFilteredListings);
-        // Save all filtered listings for first scan
-        saveCurrentLinks(priceFilteredListings);
-      } else if (newListings.length > 0) {
-        setStatusMessage(`Found ${newListings.length} new listing(s)${minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}:`);
-        setDisplayedListings(newListings);
-        // Get existing listings and add new ones
-        const existingListings = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-        const updatedListings = [...existingListings, ...newListings];
-        saveCurrentLinks(updatedListings);
-      } else if (priceFilteredListings.length === 0) {
-        setStatusMessage(`No listings found${minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}.`);
-        setDisplayedListings([]);
+      if (newListings.length > 0) {
+        setStatusMessage(`Found ${newListings.length} new listing(s)${minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}! Database updated.`);
+        setNewListingsFound(newListings);
       } else {
-        setStatusMessage('No new posts added since the last scan.');
-        setDisplayedListings([]);
+        setStatusMessage(`No new listings found${minPriceValue > 0 ? ` above €${minPriceValue.toLocaleString('it-IT')}` : ''}. Database updated.`);
+        setNewListingsFound([]);
       }
 
     } catch (fetchError) {
       console.error("Scanning failed:", fetchError);
-      setError(`Error scanning vendor: ${fetchError.message}. Check backend connection.`);
+      setError(`Error during scan: ${fetchError.message}. Check backend connection.`);
       setStatusMessage('Scan failed.');
     } finally {
       setIsLoading(false);
     }
   };
-
-   // Initial status message based on localStorage
-   useEffect(() => {
-        const previousLinks = getPreviousLinks();
-        if (previousLinks.size === 0) {
-            setStatusMessage('Click "Scan Now" for the first scan.');
-        } else {
-            setStatusMessage(`Ready. Previous scan found ${previousLinks.size} listings. Click "Scan Now" to check for updates.`);
-        }
-    }, [getPreviousLinks]);
-
 
   return (
     <div> {/* Changed from App-header maybe */}
@@ -155,12 +103,12 @@ function ScannerPage() {
       <div className="status-message">{statusMessage}</div>
       {error && <div className="error-message">{error}</div>}
 
-      {/* Display NEW or ALL (on first scan) links */}
-      {displayedListings.length > 0 && (
+      {/* Display only NEW listings found in THIS scan */}
+      {newListingsFound.length > 0 && (
         <div className="results">
-          <h3>Listings Found:</h3>
+          <h3>New Listings Found:</h3>
           <ul>
-            {displayedListings.map((listing, index) => (
+            {newListingsFound.map((listing, index) => (
               <li key={index}>
                 <Link to={`/details?url=${encodeURIComponent(listing.url)}`}>
                   {listing.url} - {listing.price}

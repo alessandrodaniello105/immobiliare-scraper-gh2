@@ -3,13 +3,17 @@
   text-align: center;
 }
 
+/* Remove the generic nav styles previously added */
+/* End Navigation Styles */
+
 .App-header {
   background-color: #f0f0f0; /* Light grey background */
-  min-height: 100vh;
+  /* Adjust height based on Navbar.css (padding 10+10 + margin-bottom 20 = ~40-50px) */
+  min-height: calc(100vh - 60px);
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  /* Removed justify-content: center; to align content top */
   font-size: calc(10px + 1vmin); /* Smaller base font */
   color: #282c34; /* Dark text */
   padding: 20px;
@@ -57,6 +61,9 @@ button:hover:not(:disabled) {
   margin-top: 20px;
   text-align: left;
   max-width: 90%;
+  width: 800px; /* Set a max-width */
+  margin-left: auto;
+  margin-right: auto;
   overflow-wrap: break-word; /* Wrap long links */
   background-color: white;
   padding: 15px;
@@ -81,4 +88,22 @@ button:hover:not(:disabled) {
 
 .results a:hover {
   text-decoration: underline;
+}
+
+/* Add styles for the price filter input */
+.price-filter {
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+.price-filter label {
+  margin-right: 10px;
+}
+
+.price-filter input {
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100px; /* Adjust width as needed */
 }
