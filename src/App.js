@@ -8,7 +8,7 @@ import PropertyDetailPage from './components/PropertyDetailPage';
 import './App.css';
 
 // Define API URLs and other constants
-export const API_BASE_URL = 'http://localhost:3001'; // Backend server address
+export const API_BASE_URL = process.env.NODE_ENV === 'development' ? 'http://localhost:3001' : ''; // Empty string for production since we're on Vercel
 export const API_URL_SCRAPE = `${API_BASE_URL}/api/scrape`; // Endpoint for scanning
 export const API_URL_LISTINGS = `${API_BASE_URL}/api/listings`; // Endpoint for getting all stored listings
 export const API_URL_DETAILS = `${API_BASE_URL}/api/details`; // Placeholder endpoint
