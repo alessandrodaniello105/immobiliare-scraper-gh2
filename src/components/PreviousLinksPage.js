@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 // Use the new constant for the listings API endpoint
-import { API_URL_LISTINGS } from '../App';
+import { API_URL_LISTINGS } from '../App.js';
 import '../App.css';
 
 function PreviousLinksPage() {

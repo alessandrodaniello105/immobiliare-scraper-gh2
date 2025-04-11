@@ -1,7 +1,7 @@
 // src/components/ScannerPage.js
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom'; // Import Link for navigation
-import { API_URL_SCRAPE } from '../App'; // Use the new constants for API endpoints
+import { API_URL_SCRAPE } from '../App.js'; // Use the new constants for API endpoints
 // Import shared CSS or create specific ones
 import '../App.css';
 

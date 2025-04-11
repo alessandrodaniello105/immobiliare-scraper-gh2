@@ -1,7 +1,7 @@
 // src/components/PropertyDetailPage.js
 import React, { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { API_URL_DETAILS } from '../App';
+import { API_URL_DETAILS } from '../App.js';
 import './PropertyDetailPage.css'; // Create specific styles
 
 function PropertyDetailPage() {
