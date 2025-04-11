@@ -79,12 +79,21 @@ export default async function handler(request, response) {
         console.log(`Navigating to ${VENDOR_URL}...`);
         // Navigate to the page
         await page.goto(VENDOR_URL, {
-            waitUntil: 'domcontentloaded', // <-- Change from networkidle2
-            timeout: 25000 // Increase timeout slightly for navigation + rendering
+            waitUntil: 'domcontentloaded', // Wait for initial DOM
+            timeout: 20000 // Timeout for initial navigation
         });
-        console.log("Navigation successful. Getting content...");
+        console.log("Navigation successful (DOM loaded).");
 
-        // Get the fully rendered HTML content
+        // *** ADDED: Wait specifically for listing items to appear ***
+        const listingItemSelector = `li.${TARGET_CLASS.split(' ').join('.')}`;
+        console.log(`Waiting for selector: ${listingItemSelector}`);
+        await page.waitForSelector(listingItemSelector, {
+             timeout: 15000 // Wait up to 15 seconds for listings to render
+        });
+        console.log("Listing selector found. Getting content...");
+        // *** END ADDED WAIT ***
+
+        // Get the fully rendered HTML content NOW
         const htmlContent = await page.content();
         console.log(`Got HTML content, length: ${htmlContent.length}`);
 
