@@ -1,6 +1,6 @@
-// Use require for puppeteer setup with chrome-aws-lambda
-const chromium = require('chrome-aws-lambda');
-const puppeteer = require('puppeteer-core');
+// Change require to import for puppeteer setup
+import chromium from 'chrome-aws-lambda';
+import puppeteer from 'puppeteer-core';
 
 // Use import for other modules if project is type: "module"
 import axios from 'axios'; // Still needed for details potentially, keep for now
