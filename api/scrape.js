@@ -1,4 +1,9 @@
-import axios from 'axios';
+// Use require for puppeteer setup with chrome-aws-lambda
+const chromium = require('chrome-aws-lambda');
+const puppeteer = require('puppeteer-core');
+
+// Use import for other modules if project is type: "module"
+import axios from 'axios'; // Still needed for details potentially, keep for now
 import * as cheerio from 'cheerio';
 import url from 'url';
 import { sql } from '@vercel/postgres';
@@ -55,24 +60,40 @@ export default async function handler(request, response) {
     const minPrice = minPriceRaw ? parsePrice(minPriceRaw) : 0;
     console.log(`Received scrape request. Min Price Filter: ${minPrice}`);
 
+    let browser = null; // Define browser variable outside try block
     try {
-        // 1. Fetch the HTML - Re-adding Sec-Fetch headers + Referer
-        const scrapeHeaders = {
-            ...BASE_HEADERS,
-            'User-Agent': getRandomUserAgent(),
-            'Sec-Fetch-Site': 'none', // Crucial for initial navigation
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-User': '?1',
-            'Sec-Fetch-Dest': 'document',
-            'Referer': VENDOR_URL // Add Referer header
-        };
-        console.log("Using headers for scrape (Attempt 2):", scrapeHeaders);
-
-        const axiosResponse = await axios.get(VENDOR_URL, {
-            headers: scrapeHeaders, // Use the updated headers
-            timeout: 20000
+        console.log("Launching browser...");
+        // Launch Puppeteer using chrome-aws-lambda
+        browser = await puppeteer.launch({
+            args: chromium.args,
+            defaultViewport: chromium.defaultViewport,
+            executablePath: await chromium.executablePath,
+            headless: chromium.headless, // Use headless mode from chrome-aws-lambda
+            ignoreHTTPSErrors: true,
         });
-        const htmlContent = axiosResponse.data;
+        
+        const page = await browser.newPage();
+        // Set a random User Agent for the browser page
+        await page.setUserAgent(getRandomUserAgent());
+
+        console.log(`Navigating to ${VENDOR_URL}...`);
+        // Navigate to the page
+        await page.goto(VENDOR_URL, {
+            waitUntil: 'networkidle2', // Wait until network is relatively idle
+            timeout: 25000 // Increase timeout slightly for navigation + rendering
+        });
+        console.log("Navigation successful. Getting content...");
+
+        // Get the fully rendered HTML content
+        const htmlContent = await page.content();
+        console.log(`Got HTML content, length: ${htmlContent.length}`);
+
+        // Close the browser ASAP
+        await browser.close();
+        browser = null; // Ensure it's marked as closed
+        console.log("Browser closed.");
+
+        // --- Now parse with Cheerio as before ---
         const $ = cheerio.load(htmlContent);
         const baseUrl = new url.URL(VENDOR_URL).origin;
 
@@ -90,7 +111,7 @@ export default async function handler(request, response) {
                 }
             }
         });
-        console.log(`Scraped ${scrapedListings.length} listings from website.`);
+        console.log(`Scraped ${scrapedListings.length} listings from page content.`);
 
         // 3. Filter scraped listings if minPrice is provided
         const listingsToSave = minPrice > 0
@@ -132,20 +153,21 @@ export default async function handler(request, response) {
 
     } catch (error) {
         console.error("Error during scraping process:", error);
+        // Ensure browser is closed even on error
+        if (browser !== null) {
+            await browser.close();
+            console.log("Browser closed after error.");
+        }
         let status = 500;
         let message = "An internal server error occurred during scraping.";
-        // Check if it's an axios error for fetching
-        if (error.isAxiosError && error.response) {
-            status = error.response.status;
-            message = `Failed to fetch or parse the page. Status: ${status}`;
-        } else if (error.isAxiosError && error.request) {
-             status = 504;
-             message = "No response received from target server.";
-        } else if (error.code && error.code.startsWith('POSTGRES_')) { // Check for Postgres errors
+        // Handle specific error types if needed
+        if (error.message && error.message.includes('Navigation timeout')) {
+            status = 504; // Gateway Timeout
+            message = "Timeout navigating to the vendor page.";
+        } else if (error.code && error.code.startsWith('POSTGRES_')) {
             status = 500;
             message = "Database error during scrape update.";
         }
-        // Ensure error.message is included
         return response.status(status).json({ message: message, error: error.message || 'Unknown error' });
     }
 } 
