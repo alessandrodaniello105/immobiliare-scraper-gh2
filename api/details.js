@@ -1,5 +1,5 @@
 import axios from 'axios';
-import cheerio from 'cheerio';
+import * as cheerio from 'cheerio';
 import url from 'url'; // Needed for VENDOR_URL if used for referer
 
 // --- Configuration (Copied from server.js) ---
