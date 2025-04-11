@@ -2,6 +2,7 @@
   "name": "immobiliare-screaper-react-gemini",
   "version": "1.0.0",
   "main": "server.js",
+  "type": "module",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "client": "react-scripts start",
@@ -12,6 +13,9 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "engines": {
+    "node": "18.x"
+  },
   "dependencies": {
     "@vercel/postgres": "^0.9.0",
     "axios": "^1.8.4",
