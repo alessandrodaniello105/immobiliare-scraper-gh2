@@ -53,12 +53,15 @@ function ScannerPage() {
         body: JSON.stringify({ minPrice: minPrice }), // Send raw minPrice string
       });
 
-      const data = await response.json();
+
+      const text = await response.text();
 
       if (!response.ok) {
         throw new Error(data.message || `HTTP error! Status: ${response.status}`);
       }
 
+      const data = JSON.parse(text);
+      
       const newListings = data.newListings || [];
 
       if (newListings.length > 0) {
