@@ -79,7 +79,7 @@ export default async function handler(request, response) {
         console.log(`Navigating to ${VENDOR_URL}...`);
         // Navigate to the page
         await page.goto(VENDOR_URL, {
-            waitUntil: 'networkidle2', // Wait until network is relatively idle
+            waitUntil: 'domcontentloaded', // <-- Change from networkidle2
             timeout: 25000 // Increase timeout slightly for navigation + rendering
         });
         console.log("Navigation successful. Getting content...");
