@@ -1,10 +1,10 @@
 // src/App.js
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import Navbar from './components/Navbar';
-import ScannerPage from './components/ScannerPage';
-import PreviousLinksPage from './components/PreviousLinksPage';
-import PropertyDetailPage from './components/PropertyDetailPage';
+import Navbar from './components/Navbar.js';
+import ScannerPage from './components/ScannerPage.js';
+import PreviousLinksPage from './components/PreviousLinksPage.js';
+import PropertyDetailPage from './components/PropertyDetailPage.js';
 import './App.css';
 
 // Define API URLs and other constants
