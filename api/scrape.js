@@ -1,5 +1,5 @@
 // Change require to import for puppeteer setup
-import chromium from '@sparticuz/chrome-aws-lambda';
+import chromium from '@sparticuz/chromium';
 import puppeteer from 'puppeteer-core';
 
 // Use import for other modules if project is type: "module"
@@ -63,12 +63,12 @@ export default async function handler(request, response) {
     let browser = null; // Define browser variable outside try block
     try {
         console.log("Launching browser...");
-        // Launch Puppeteer using chrome-aws-lambda
+        // Launch Puppeteer using @sparticuz/chromium
         browser = await puppeteer.launch({
             args: chromium.args,
             defaultViewport: chromium.defaultViewport,
-            executablePath: await chromium.executablePath,
-            headless: chromium.headless, // Use headless mode from chrome-aws-lambda
+            executablePath: await chromium.executablePath(), // <-- Use await and call as function
+            headless: chromium.headless, // Use 'new' headless mode if supported/needed, otherwise use boolean
             ignoreHTTPSErrors: true,
         });
         
