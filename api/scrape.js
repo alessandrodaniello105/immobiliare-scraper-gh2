@@ -1,5 +1,5 @@
 // Change require to import for puppeteer setup
-import chromium from 'chrome-aws-lambda';
+import chromium from '@sparticuz/chrome-aws-lambda';
 import puppeteer from 'puppeteer-core';
 
 // Use import for other modules if project is type: "module"
