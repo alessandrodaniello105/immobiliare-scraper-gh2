@@ -56,15 +56,20 @@ export default async function handler(request, response) {
     console.log(`Received scrape request. Min Price Filter: ${minPrice}`);
 
     try {
-        // 1. Fetch the HTML - Use MINIMAL headers
-        const minimalScrapeHeaders = {
+        // 1. Fetch the HTML - Re-adding Sec-Fetch headers + Referer
+        const scrapeHeaders = {
             ...BASE_HEADERS,
             'User-Agent': getRandomUserAgent(),
+            'Sec-Fetch-Site': 'none', // Crucial for initial navigation
+            'Sec-Fetch-Mode': 'navigate',
+            'Sec-Fetch-User': '?1',
+            'Sec-Fetch-Dest': 'document',
+            'Referer': VENDOR_URL // Add Referer header
         };
-        console.log("Using MINIMAL headers for scrape:", minimalScrapeHeaders);
+        console.log("Using headers for scrape (Attempt 2):", scrapeHeaders);
 
         const axiosResponse = await axios.get(VENDOR_URL, {
-            headers: minimalScrapeHeaders,
+            headers: scrapeHeaders, // Use the updated headers
             timeout: 20000
         });
         const htmlContent = axiosResponse.data;
