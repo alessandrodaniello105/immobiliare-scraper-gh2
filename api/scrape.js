@@ -76,7 +76,19 @@ export default async function handler(request, response) {
         // Set a random User Agent for the browser page
         await page.setUserAgent(getRandomUserAgent());
 
-        console.log(`Navigating to ${VENDOR_URL}...`);
+        // *** ADDED: Block unnecessary resources ***
+        await page.setRequestInterception(true);
+        page.on('request', (request) => {
+            const resourceType = request.resourceType();
+            if (resourceType === 'image' || resourceType === 'stylesheet' || resourceType === 'font') {
+                request.abort();
+            } else {
+                request.continue();
+            }
+        });
+        // *** END BLOCKING ***
+
+        console.log(`Navigating to ${VENDOR_URL} (blocking resources)...`);
         // Navigate to the page
         await page.goto(VENDOR_URL, {
             waitUntil: 'domcontentloaded', // Wait for initial DOM
